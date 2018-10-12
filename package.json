@@ -2,7 +2,7 @@
   "name": "gamelist",
   "version": "1.0.0",
   "description": "List frequency of games played",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/lemazza/GameList/issues"
   },
-  "homepage": "https://github.com/lemazza/GameList#readme"
+  "homepage": "https://github.com/lemazza/GameList#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "mongoose": "^5.3.2",
+    "morgan": "^1.9.1",
+    "nodemon": "^1.18.4"
+  }
 }
