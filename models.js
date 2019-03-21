@@ -10,13 +10,30 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
  */
 
 const GameListSchema = mongoose.Schema({
-  string: {type: String, required: true},
-  totalPlayCount: Number,
-  totalTableCount: Number,
+  name: {type: String, required: true},
+  totalPlayCount: {type: Number, default: 0},
+  totalTableCount: {type: Number, default: 0},
   playTimes: [Date],
   tableTimes: [Date]
 })
 
-const Game = mongoose.model('Movie', GameListSchema);
+GameListSchema.virtual('totalCount').get( function() {
+  return (this.totalPlayCount || 0) + (this.totalTableCount || 0);
+})
+
+
+GameListSchema.methods.serialize = function() {
+  return {
+    id: this._id,
+    name: this.name,
+    totalCount: this.totalCount,
+    playCount: this.totalPlayCount,
+    tableCount: this.totalTableCount
+  };
+};
+
+
+
+const Game = mongoose.model('Game', GameListSchema);
 
 module.exports = {Game};

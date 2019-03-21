@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lemazza/GameList.git"
+    "url": "git+https://github.com/lemazza/GH-Inventory-API.git"
   },
   "author": "Louis Mazza",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/lemazza/GameList/issues"
+    "url": "https://github.com/lemazza/GH-Inventory-API/issues"
   },
-  "homepage": "https://github.com/lemazza/GameList#readme",
+  "homepage": "https://github.com/lemazza/GH-Inventory-API#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",

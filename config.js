@@ -4,5 +4,5 @@ exports.DATABASE_URL = process.env.DATABASE_URL  ||  'mongodb://lemazza:12r46a@d
 exports.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || 'mongodb://localhost/test-movieDb';
 
 
-exports.PORT = process.env.PORT || 1500;
+exports.PORT = process.env.PORT || 1800;
 
