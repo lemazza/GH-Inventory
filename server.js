@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const {Game} = require('./models');
 const config = require('./config');
-const request = require('request')
+const request = require('request');
+var {parseString} = require('xml2js');
 
 
 const { DATABASE_URL, PORT } = require('./config');
@@ -35,17 +36,21 @@ app.get('/', function (req, res, next) {
 
 
 app.get('/update/', function (req, res, next) {
-  const list = ['Hi', 'Hello', 'Bonjour', 'Hey', 'Buenas Dias']
-
-  console.log('about to request')
-
+  
   request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1', function (error, response, body) {
-    console.log('requesting')
     console.log('error:', error); // Print the error if one occurred
-    console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-    console.log('body:', body); // Print the HTML for the Google homepage.
+    // need error handling
+    const idArray = [];
 
-    res.send(body);
+    parseString(body, function(err, result) {
+      let gamesObj = result.items.item;
+
+      for( var game in gamesObj) {
+        idArray.push(gamesObj[game]["$"].objectid)
+      }
+
+      res.send(idArray);
+    })
   });
 
 });
