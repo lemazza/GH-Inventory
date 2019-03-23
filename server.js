@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const {Game} = require('./models');
 const config = require('./config');
-const request = require('request');
+const request = require('request-promise-native');
 var {parseString} = require('xml2js');
 
 
@@ -36,23 +36,29 @@ app.get('/', function (req, res, next) {
 
 
 app.get('/update/', function (req, res, next) {
-  
-  request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1', function (error, response, body) {
-    console.log('error:', error); // Print the error if one occurred
-    // need error handling
+  // get game Id's from user collection
+  request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1')
+  .then(body=> {
     const idArray = [];
-
     parseString(body, function(err, result) {
       let gamesObj = result.items.item;
-
       for( var game in gamesObj) {
         idArray.push(gamesObj[game]["$"].objectid)
       }
-
-      res.send(idArray);
     })
-  });
-
+    return idArray;
+  })
+  .then(idArray => {
+    // use Id's to get full game data for each item
+    let requestPath = 'https://api.geekdo.com/xmlapi2/thing?id=' + idArray.join(',')
+    request(requestPath)
+    .then(body => {
+      parseString(body, function(err, result) {
+        console.dir(result);
+        res.send(result)
+      })  
+    })
+  })
 });
 
 
