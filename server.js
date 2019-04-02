@@ -35,31 +35,90 @@ app.get('/', function (req, res, next) {
 
 
 
-app.get('/update/', function (req, res, next) {
+app.get('/insert/', function (req, res, next) {
   // get game Id's from user collection
-  request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1')
+  let gamesObj
+  let newEntries = []
+  request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1&stats=1')
   .then(body=> {
     const idArray = [];
     parseString(body, function(err, result) {
-      let gamesObj = result.items.item;
+      gamesObj = result.items.item;
       for( var game in gamesObj) {
         idArray.push(gamesObj[game]["$"].objectid)
+        
+
+        let ngYear = (gamesObj[game].yearpublished && gamesObj[game].yearpublished[0])
+          ? gamesObj[game].yearpublished[0] : 'n/a';
+        
+        let ngMinPlayers = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].minplayers)
+          ? gamesObj[game].stats[0]["$"].minplayers : 'n/a';
+
+        let ngMaxPlayers = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].maxplayers)
+          ? gamesObj[game].stats[0]["$"].maxplayers : 'n/a';
+
+        let ngPlayTime = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].playingtime)
+          ? gamesObj[game].stats[0]["$"].playingtime : 'n/a';
+
+
+        let newGame = {
+          bggId: gamesObj[game]["$"].objectid,
+          name: gamesObj[game].name[0]["_"],
+          image: gamesObj[game].image[0],
+          year: ngYear,
+          minplayers: ngMinPlayers,
+          maxplayers: ngMaxPlayers,
+          playTime: ngPlayTime,
+        }
+
+        newEntries.push(newGame)
       }
     })
     return idArray;
   })
   .then(idArray => {
     // use Id's to get full game data for each item
-    let requestPath = 'https://api.geekdo.com/xmlapi2/thing?id=' + idArray.join(',')
-    request(requestPath)
+    let testArray = idArray.slice(0,10);
+    const gameRequestOptions = {
+      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(','),
+    }
+    request(gameRequestOptions)
     .then(body => {
       parseString(body, function(err, result) {
-        console.dir(result);
-        res.send(result)
+        console.log('error', err);
+
+        /*Game
+        .insertMany(newEntries)
+        .then(insResult =>
+          res.send(insResult)
+        ).catch(err=>
+          res.status(500).send(err)
+        )*/
       })  
     })
   })
 });
+
+
+
+
+app.get('/update-all-db', function(req, res, next) {
+  //using mlab data, check for new info/ further info from bgg
+
+  //first get data from Game, make array of id's
+
+  //then call bgg thing info progromattically (600 at a time?)
+
+  //update each entry with new info
+
+})
+
+
+
+
+
+
+
 
 
 

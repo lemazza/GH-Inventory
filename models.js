@@ -10,18 +10,20 @@ mongoose.Promise = global.Promise;
 
 //setting year as Number for simplicity
 const GameInventorySchema = mongoose.Schema({
-  bggId: Number,
+  bggId: {type: Number, required: true},
   name: {type: String, required: true},
   totalViewCount: {type: Number, default: 0},
-  thumbnail: String,
+  image: String,
   description: String,
-  year: Number,
-  minPlayers: Number,
-  maxPlayers: Number,
-  playTime: Number,
-  minAge: Number,
+  year: String,
+  minPlayers: String,
+  maxPlayers: String,
+  playTime: String,
+  minAge: String,
   designer: [String],
   location: String,
+  bggRank: Number,
+  bggBayesAvg: Number
 })
 
 
@@ -29,7 +31,7 @@ GameInventorySchema.methods.serialize = function() {
   return {
     id: this._id,
     name: this.name,
-    thumbnail: this.thumbnail,
+    image: this.image,
     description: this.description,
     year: this.year,
     minPlayers: this.minPlayers,
