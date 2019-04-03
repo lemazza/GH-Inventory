@@ -35,7 +35,7 @@ app.get('/', function (req, res, next) {
 
 
 
-app.get('/insert/', function (req, res, next) {
+app.get('/check-collection/', function (req, res, next) {
   // get game Id's from user collection
   let gamesObj
   let newEntries = []
@@ -78,14 +78,7 @@ app.get('/insert/', function (req, res, next) {
   })
   .then(idArray => {
     // use Id's to get full game data for each item
-    let testArray = idArray.slice(0,10);
-    const gameRequestOptions = {
-      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(','),
-    }
-    request(gameRequestOptions)
-    .then(body => {
-      parseString(body, function(err, result) {
-        console.log('error', err);
+   
 
         /*Game
         .insertMany(newEntries)
@@ -94,8 +87,6 @@ app.get('/insert/', function (req, res, next) {
         ).catch(err=>
           res.status(500).send(err)
         )*/
-      })  
-    })
   })
 });
 
@@ -106,12 +97,46 @@ app.get('/update-all-db', function(req, res, next) {
   //using mlab data, check for new info/ further info from bgg
 
   //first get data from Game, make array of id's
+  let updateArray = [];
 
+   Game
+  .find()
+  .then(gameArray=> {
+    let idArray = gameArray.map(game=> Number(game.bggId));
+
+    let testArray = idArray.slice(0,3);
+    const gameRequestOptions = {
+      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(','),
+    }
+
+    request(gameRequestOptions)
+    .then(body => {
+      parseString(body, function(err, result) {
+        console.log('error', err);
+
+        parsedRes = result.items.item;
+
+        for( var item in parsedRes) {
+          let game = parsedRes[item];
+
+          let updateGame = {
+            bggId: game["$"] && game["$"].id ? game["$"].id : 'n/a',
+            description: game.description? game.description[0] : 'n/a',
+            minPlayers: game.minplayers && game.minplayers[0] ? game.minplayers[0]["$"].value : 'n/a',
+            maxPlayers: game.maxplayers && game.maxplayers[0] ? game.maxplayers[0]["$"].value : 'n/a',
+            minAge: game.minage && game.minage[0] ? game.minage[0]["$"].value : 'n/a',
+          }
+          updateArray.push(updateGame);
+        } 
+
+        res.send(updateArray);
+      })
+    })
   //then call bgg thing info progromattically (600 at a time?)
 
   //update each entry with new info
-
-})
+  })
+});
 
 
 
