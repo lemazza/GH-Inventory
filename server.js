@@ -106,7 +106,7 @@ app.get('/update-all-db', function(req, res, next) {
 
     let testArray = idArray.slice(0,3);
     const gameRequestOptions = {
-      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(','),
+      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(',') + '&stats=1'
     }
 
     request(gameRequestOptions)
@@ -118,6 +118,20 @@ app.get('/update-all-db', function(req, res, next) {
 
         for( var item in parsedRes) {
           let game = parsedRes[item];
+          // reduce would be faster than filter-map, but i keep getting errors
+          let designerArray = game.link.filter(elem => {
+            if( elem["$"] && elem["$"].type == "boardgamedesigner") {
+              return elem
+            } 
+          }).map( elem => elem["$"].value)
+
+          let stats = game.statistics && game.statistics[0] && game.statistics[0].ratings && game.statistics[0].ratings[0]
+
+          let bayesAvg = stats && stats.bayesaverage[0] && stats.bayesaverage[0]["$"].value;
+          let rankArray = stats && stats.ranks && stats.ranks[0] && stats.ranks[0].rank;
+
+          let gRank = rankArray && rankArray.find(g => g["$"].name === "boardgame");
+
 
           let updateGame = {
             bggId: game["$"] && game["$"].id ? game["$"].id : 'n/a',
@@ -125,6 +139,9 @@ app.get('/update-all-db', function(req, res, next) {
             minPlayers: game.minplayers && game.minplayers[0] ? game.minplayers[0]["$"].value : 'n/a',
             maxPlayers: game.maxplayers && game.maxplayers[0] ? game.maxplayers[0]["$"].value : 'n/a',
             minAge: game.minage && game.minage[0] ? game.minage[0]["$"].value : 'n/a',
+            designer: designerArray || [],
+            bayesAvg: bayesAvg || 'n/a',
+            rank: gRank["$"].value || 'n/a'
           }
           updateArray.push(updateGame);
         } 
