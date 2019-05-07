@@ -94,64 +94,80 @@ app.get('/check-collection/', function (req, res, next) {
 
 
 app.get('/update-all-db', function(req, res, next) {
+  function createBulkWriteItem(item){
+    return {
+      updateOne: {
+        filter: {"bggId": item.bggId},
+        update: { $set: {...item}}
+      }
+    }
+  }
   //using mlab data, check for new info/ further info from bgg
-
   //first get data from Game, make array of id's
-  let updateArray = [];
 
    Game
   .find()
   .then(gameArray=> {
     let idArray = gameArray.map(game=> Number(game.bggId));
 
-    let testArray = idArray.slice(0,3);
-    const gameRequestOptions = {
-      uri: `https://www.boardgamegeek.com/xmlapi2/thing?id=` + testArray.join(',') + '&stats=1'
-    }
+    // break idArray into smaller chunks and then promise.all
+    async function getAllBggInfo(arr, uri, chunkSize) {
+      const chunks = [];
+      let updateArray = [];
+      let i = 0;
+      let n = arr.length;
 
-    request(gameRequestOptions)
-    .then(body => {
-      parseString(body, function(err, result) {
-        console.log('error', err);
+      while (i<n) {
+        //request a smaller chunk of the total inventory and parse it from xml to obj
+        let reqFunc = await request({uri: uri + arr.slice(i, i+= chunkSize).join(',')})
+        parseString(reqFunc, function(err, result) {
+          parsedRes = result.items.item;
+          // iterate through chunk and create gameUpdate objects
+          for( var item in parsedRes) {
+            let game = parsedRes[item];
+            // reduce would be faster than filter-map, but i keep getting errors
+            let designerArray = game.link.filter(elem => {
+              if( elem["$"] && elem["$"].type == "boardgamedesigner") {
+                return elem
+              } 
+            }).map( elem => elem["$"].value)
 
-        parsedRes = result.items.item;
-
-        for( var item in parsedRes) {
-          let game = parsedRes[item];
-          // reduce would be faster than filter-map, but i keep getting errors
-          let designerArray = game.link.filter(elem => {
-            if( elem["$"] && elem["$"].type == "boardgamedesigner") {
-              return elem
-            } 
-          }).map( elem => elem["$"].value)
-
-          let stats = game.statistics && game.statistics[0] && game.statistics[0].ratings && game.statistics[0].ratings[0]
-
-          let bayesAvg = stats && stats.bayesaverage[0] && stats.bayesaverage[0]["$"].value;
-          let rankArray = stats && stats.ranks && stats.ranks[0] && stats.ranks[0].rank;
-
-          let gRank = rankArray && rankArray.find(g => g["$"].name === "boardgame");
+            let stats = game.statistics && game.statistics[0] && game.statistics[0].ratings && game.statistics[0].ratings[0]
+            let bayesAvg = stats && stats.bayesaverage[0] && stats.bayesaverage[0]["$"].value;
+            let rankArray = stats && stats.ranks && stats.ranks[0] && stats.ranks[0].rank;
+            let gRank = rankArray && rankArray.find(g => g["$"].name === "boardgame");
 
 
-          let updateGame = {
-            bggId: game["$"] && game["$"].id ? game["$"].id : 'n/a',
-            description: game.description? game.description[0] : 'n/a',
-            minPlayers: game.minplayers && game.minplayers[0] ? game.minplayers[0]["$"].value : 'n/a',
-            maxPlayers: game.maxplayers && game.maxplayers[0] ? game.maxplayers[0]["$"].value : 'n/a',
-            minAge: game.minage && game.minage[0] ? game.minage[0]["$"].value : 'n/a',
-            designer: designerArray || [],
-            bayesAvg: bayesAvg || 'n/a',
-            rank: gRank["$"].value || 'n/a'
+            let updateGame = {
+              bggId: game["$"].id,
+              description: game.description? game.description[0] : 'n/a',
+              minPlayers: game.minplayers && game.minplayers[0] ? game.minplayers[0]["$"].value : 'n/a',
+              maxPlayers: game.maxplayers && game.maxplayers[0] ? game.maxplayers[0]["$"].value : 'n/a',
+              minAge: game.minage && game.minage[0] ? game.minage[0]["$"].value : 'n/a',
+              designer: designerArray || [],
+              bggBayesAvg: bayesAvg || 'n/a',
+              bggRank: gRank["$"].value || 'n/a'
+            }
+            updateArray.push(createBulkWriteItem(updateGame));
           }
-          updateArray.push(updateGame);
-        } 
+        })
+      }
+      return updateArray;
+    };
 
-        res.send(updateArray);
-      })
-    })
-  //then call bgg thing info progromattically (600 at a time?)
 
-  //update each entry with new info
+    async function createUpdateObjectsForDB() {
+      const upArr = await getAllBggInfo(idArray, "https://www.boardgamegeek.com/xmlapi2/thing?stats=1&id=", 400);
+      try{
+        Game
+        .bulkWrite(upArr)
+        .then(successObj => res.json(successObj))
+      } catch(e){
+        res.error(e);
+      }
+    }
+        
+    createUpdateObjectsForDB();
   })
 });
 

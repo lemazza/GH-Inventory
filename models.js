@@ -22,8 +22,8 @@ const GameInventorySchema = mongoose.Schema({
   minAge: String,
   designer: [String],
   location: String,
-  bggRank: Number,
-  bggBayesAvg: Number
+  bggRank: String,
+  bggBayesAvg: String
 })
 
 
