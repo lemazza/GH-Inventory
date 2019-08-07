@@ -166,15 +166,128 @@ app.get('/update-all-db', function(req, res, next) {
         res.error(e);
       }
     }
-        
+
     createUpdateObjectsForDB();
   })
 });
 
 
 
+app.get('/refresh-all-db', function(req, res, next) {
+  request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1&stats=1')
+  .then(body=> {
+    let gamesObj
+    let newEntries = []
+    parseString(body, function(err, result) {
+      gamesObj = result.items.item;
+
+      for( var game in gamesObj) {
+        let ugYear = (gamesObj[game].yearpublished && gamesObj[game].yearpublished[0])
+          ? gamesObj[game].yearpublished[0] : 'n/a';
+        
+        let ugMinPlayers = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].minplayers)
+          ? gamesObj[game].stats[0]["$"].minplayers : 'n/a';
+
+        let ugMaxPlayers = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].maxplayers)
+          ? gamesObj[game].stats[0]["$"].maxplayers : 'n/a';
+
+        let ugPlayTime = (gamesObj[game].stats[0] && gamesObj[game].stats[0]["$"].playingtime)
+          ? gamesObj[game].stats[0]["$"].playingtime : 'n/a';
+
+        let ugImage = (gamesObj[game].image && gamesObj[game].image[0]) 
+          ? gamesObj[game].image[0] : 'n/a';
+
+        let ugLastModified = (gamesObj[game].status && gamesObj[game].status[0]["$"] && gamesObj[game].status[0]["$"].lastmodified)
+          ? gamesObj[game].status[0]["$"].lastmodified : Date.now().toString("yyyy-MM-dd hh:mm:ss");
 
 
+        let upsertGame = {
+          updateOne: {
+            filter: {"bggId": gamesObj[game]["$"].objectid},
+            update: { $set: {
+              bggId: gamesObj[game]["$"].objectid,
+              name: gamesObj[game].name[0]["_"],
+              image: ugImage,
+              year: ugYear,
+              minPlayers: ugMinPlayers,
+              maxPlayers: ugMaxPlayers,
+              playTime: ugPlayTime,
+              lastModified: ugLastModified,
+              }
+            },
+            upsert: true
+          }
+        };
+
+        newEntries.push(upsertGame)
+      }
+    })
+    return newEntries;
+  })
+  .then(newEntries => {
+    Game
+    .bulkWrite(newEntries)
+    .then(successObj=> res.json(successObj))
+  })
+})
+
+app.put('/games/:bggId', function(req, res, next) {
+  const {ghName, ghImage, ghLocation} = req.body;
+
+  const updated = {};
+  const updateableFields = ['ghName', 'ghImage', 'ghLocation'];
+  updateableFields.forEach(field => {
+    if (field in req.body) {
+      const fieldName = 'ghEdit.' + field;
+      updated[fieldName] = req.body[field];
+    }
+  });
+
+  Game
+  .findOneAndUpdate(
+    {"bggId": req.params.bggId},
+    {$set: updated},
+    {returnNewDocument: true}
+  )
+  .then(doc=> {
+    res.json(doc);
+  })
+})
+
+app.delete('/games/:bggId', function (req, res, next) {
+  Game
+  .findOneAndDelete({"bggId": req.params.bggId})
+  .then(doc => {
+    console.log('deleted', doc);
+    res.status(204).end();
+  })
+  .catch(err => {
+    console.error(err);
+    res.status(500).json({ error: 'failed to delete', err});
+  });
+});
+
+//don't know why this didn't work
+app.get('/remove-min-max', function(req, res, next) {
+  Game
+  .updateMany(
+    {}, 
+    {$unset: {minplayers: 1, maxplayers: 1}}, 
+  )
+  .then(doc=> {
+    res.json(doc);
+  })
+})
+
+
+app.get('/games', function(req, res, next) {
+  console.log('/games endpoint hit');
+  Game
+  .find()
+  .then(gameArray=> {
+    res.json(gameArray);
+  })
+})
 
 
 

@@ -1,3 +1,4 @@
+
 'use strict';
 
 const mongoose = require('mongoose');
@@ -23,7 +24,13 @@ const GameInventorySchema = mongoose.Schema({
   designer: [String],
   location: String,
   bggRank: String,
-  bggBayesAvg: String
+  bggBayesAvg: String,
+  lastModified: Date,
+  ghEdit: {
+    ghName: String,
+    ghImage: String,
+    ghLocation: String,
+  }
 })
 
 
