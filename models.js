@@ -22,7 +22,6 @@ const GameInventorySchema = mongoose.Schema({
   playTime: String,
   minAge: String,
   designer: [String],
-  location: String,
   bggRank: String,
   bggBayesAvg: String,
   lastModified: Date,
@@ -30,13 +29,14 @@ const GameInventorySchema = mongoose.Schema({
     ghName: String,
     ghImage: String,
     ghLocation: String,
+    ghComment: String,
   }
 })
 
 
 GameInventorySchema.methods.serialize = function() {
   return {
-    id: this._id,
+    bggId: this.bggId,
     name: this.name,
     image: this.image,
     description: this.description,
@@ -46,7 +46,9 @@ GameInventorySchema.methods.serialize = function() {
     playTime: this.playTime,
     minAge: this.minAge,
     designer: this.designer,
-    location: this.location
+    bggBayesAvg: this.bggBayesAvg,
+    lastModified: this.lastModified,
+    location: this.ghEdit.ghLocation
   };
 };
 

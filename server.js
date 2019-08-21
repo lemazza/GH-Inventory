@@ -173,6 +173,43 @@ app.get('/update-all-db', function(req, res, next) {
 
 
 
+
+app.get('/add-locations', function(req, res, next) {
+  const locationCategories = ["party", "war", "sci-fi", "fantasy", "office", "family/classic", "2p", "alea/3m", "small card", "wall of shame", "unassigned"]
+
+  function randomItemFromArray(arr) {
+    const randomItemIndex = Math.floor(Math.random() * arr.length);
+    return arr[randomItemIndex]
+  }
+
+  function createUpdateObj (id) {
+    return {
+      updateOne: {
+        filter: {"bggId": id},
+        update: { $set: {"ghEdit.ghLocation": randomItemFromArray(locationCategories)}
+        }
+      } 
+    }
+  }
+  // get Id's from collection
+  Game
+  .find({}, {bggId: true})
+  .then(idArray=> {
+    const updateArray = idArray.map(item => createUpdateObj(item.bggId));
+
+    try {
+      Game
+      .bulkWrite(updateArray)
+      .then(successObj=> res.json(successObj))
+    } catch(e) {
+    res.error(e);
+    } 
+  }) 
+})
+
+
+
+
 app.get('/refresh-all-db', function(req, res, next) {
   request('https://api.geekdo.com/xmlapi2/collection?username=gamehauscafe&own=1&stats=1')
   .then(body=> {
@@ -285,7 +322,8 @@ app.get('/games', function(req, res, next) {
   Game
   .find()
   .then(gameArray=> {
-    res.json(gameArray);
+    console.log(gameArray);
+    res.json(gameArray.map(game=>game.serialize()));
   })
 })
 
