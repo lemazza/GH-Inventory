@@ -1,4 +1,3 @@
-
 'use strict';
 
 const mongoose = require('mongoose');
@@ -28,7 +27,8 @@ const GameInventorySchema = mongoose.Schema({
   ghEdit: {
     ghName: String,
     ghImage: String,
-    ghLocation: String,
+    ghShelf: String,
+    ghLocationName: String,
     ghComment: String,
   }
 })
@@ -48,7 +48,8 @@ GameInventorySchema.methods.serialize = function() {
     designer: this.designer,
     bggBayesAvg: this.bggBayesAvg,
     lastModified: this.lastModified,
-    location: this.ghEdit.ghLocation
+    shelf: this.ghEdit.ghShelf,
+    locationName: this.ghEdit.ghLocationName
   };
 };
 

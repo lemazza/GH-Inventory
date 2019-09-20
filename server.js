@@ -6,6 +6,7 @@ const {Game} = require('./models');
 const config = require('./config');
 const request = require('request-promise-native');
 var {parseString} = require('xml2js');
+const {Shelves} = require('./utils/shelf-locations');
 
 
 const { DATABASE_URL, PORT } = require('./config');
@@ -175,7 +176,7 @@ app.get('/update-all-db', function(req, res, next) {
 
 
 app.get('/add-locations', function(req, res, next) {
-  const locationCategories = ["party", "war", "sci-fi", "fantasy", "office", "family/classic", "2p", "alea/3m", "small card", "wall of shame", "unassigned"]
+  const shelfLocations = Object.keys(Shelves);
 
   function randomItemFromArray(arr) {
     const randomItemIndex = Math.floor(Math.random() * arr.length);
@@ -183,10 +184,12 @@ app.get('/add-locations', function(req, res, next) {
   }
 
   function createUpdateObj (id) {
+    let shelf = randomItemFromArray(shelfLocations)
+    let shelfName = randomItemFromArray(Shelves[shelf])
     return {
       updateOne: {
         filter: {"bggId": id},
-        update: { $set: {"ghEdit.ghLocation": randomItemFromArray(locationCategories)}
+        update: { $set: {"ghEdit.ghShelf": shelf, "ghEdit.ghLocationName": shelfName}
         }
       } 
     }
