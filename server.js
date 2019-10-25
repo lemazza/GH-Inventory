@@ -325,7 +325,6 @@ app.get('/games', function(req, res, next) {
   Game
   .find()
   .then(gameArray=> {
-    console.log(gameArray);
     res.json(gameArray.map(game=>game.serialize()));
   })
 })
