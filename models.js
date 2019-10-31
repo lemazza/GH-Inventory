@@ -24,6 +24,7 @@ const GameInventorySchema = mongoose.Schema({
   bggRank: String,
   bggBayesAvg: String,
   lastModified: Date,
+  dateAdded: Date,
   ghEdit: {
     ghName: String,
     ghImage: String,
@@ -49,7 +50,8 @@ GameInventorySchema.methods.serialize = function() {
     bggBayesAvg: this.bggBayesAvg,
     lastModified: this.lastModified,
     shelf: this.ghEdit.ghShelf,
-    locationName: this.ghEdit.ghLocationName
+    locationName: this.ghEdit.ghLocationName,
+    dateAdded: this.dateAdded
   };
 };
 

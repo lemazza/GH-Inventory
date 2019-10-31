@@ -5,14 +5,20 @@ const bodyParser = require('body-parser');
 const {Game} = require('./models');
 const config = require('./config');
 const request = require('request-promise-native');
+const cheerio = require('cheerio');
 var {parseString} = require('xml2js');
+const schedule = require('node-schedule');
+
 const {Shelves} = require('./utils/shelf-locations');
-
-
 const { DATABASE_URL, PORT } = require('./config');
 
 const app = express();
 var http = require('http').Server(app);
+
+/*const job = schedule.scheduleJob({ second: 0 }, function(event) {
+  const d = new Date(event)
+  console.log('running scheduled event at ', d.toLocaleTimeString('en-US'));
+})*/
 
 app.use(morgan('common'));
 app.use(bodyParser.json());
@@ -175,6 +181,64 @@ app.get('/update-all-db', function(req, res, next) {
 
 
 
+app.get('/add-dates', function(req, res, next) {
+  // use Cheerio and Request-promise to scrape date and bggId, then update DB
+  // request settings, setup with the page to scrape and cheerio settings
+  const bggPermaLink = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&subtype=boardgame'
+  const bggPermaLink2 = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&pageID=2&subtype=boardgame'
+  const bggPermaLink3 = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&pageID=3&subtype=boardgame'
+  const bggPermaLink4 = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&pageID=4&subtype=boardgame'
+  const bggPermaLink5 = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&pageID=5&subtype=boardgame'
+  const bggPermaLink6 = 'https://boardgamegeek.com/collection/user/GameHausCafe?rankobjecttype=subtype&rankobjectid=1&columns=title%7Cstatus%7Cversion%7Cpostdate%7Crating%7Cbggrating%7Cplays%7Ccomment%7Ccommands&geekranks=%0A%09%09%09%09%09%09%09%09%09Board%20Game%20Rank%0A%09%09%09%09%09%09%09%09&own=1&objecttype=thing&ff=1&pageID=6&subtype=boardgame'
+
+
+
+  const options = {
+    uri: bggPermaLink6,
+    transform: function (body) {
+        return cheerio.load(body);
+    }
+  };
+
+  request(options)
+    .then(function ($) {
+      const updateArray = $('.collection_objectname a','.collection_table tr').map(function (index, elem) {
+        //get bggId
+        const hrefValue = $(this).attr('href');  
+        const firstIndex = (hrefValue.search('expansion') === -1) ? 11: 20;
+        const lastIndex = hrefValue.lastIndexOf('/');
+        const bggId = Number(hrefValue.substring(firstIndex, lastIndex));
+        // get dateAdded
+        const stringDate = $(this).closest('td').siblings('.collection_postdate').text().substr(4,10);
+        const dateAdded = new Date(stringDate);
+        return {
+          updateOne: {
+            filter: {bggId},
+            update: {$set: {dateAdded}}
+          }
+        }
+      }).get();
+      
+      try {
+        Game
+        .bulkWrite(updateArray)
+        .then(successObj=> res.json(successObj))
+      } catch(e) {
+      res.error(e);
+      } 
+       
+    })
+    .catch(function (err) {
+      // Crawling failed or Cheerio choked...
+      console.log('something went wrong', err);
+    }); 
+})
+
+
+
+
+
+
 app.get('/add-locations', function(req, res, next) {
   const shelfLocations = Object.keys(Shelves);
 
@@ -253,6 +317,9 @@ app.get('/refresh-all-db', function(req, res, next) {
               maxPlayers: ugMaxPlayers,
               playTime: ugPlayTime,
               lastModified: ugLastModified,
+              },
+              $setOnInsert: {
+                dateAdded: Date.now()
               }
             },
             upsert: true
