@@ -56,7 +56,15 @@ GameInventorySchema.methods.serialize = function() {
 };
 
 
+const UpdateLogSchema = mongoose.Schema({
+  type: {type: String, required: true},
+  date: {type: Date, required: true},
+  updateObj: Object
+})
+
 
 const Game = mongoose.model('Game', GameInventorySchema);
 
-module.exports = {Game};
+const UpdateLog = mongoose.model('UpdateLog', UpdateLogSchema);
+
+module.exports = {Game, UpdateLog};
