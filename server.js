@@ -442,8 +442,6 @@ app.get('/refresh-all-db', jwtAuth, (req, res, next) => {
 
 
 app.put('/games/:bggId', jwtAuth, (req, res, next) => {
-  const { ghName, ghImage, ghLocation } = req.body;
-
   const updated = {};
   const updateableFields = ['ghName', 'ghImage', 'ghShelf', 'ghLocationName', 'ghComment'];
   updateableFields.forEach((field) => {
@@ -491,7 +489,6 @@ app.get('/remove-min-max', (req, res, next) => {
 
 
 app.get('/games', (req, res, next) => {
-  console.log('/games endpoint hit');
   Game
     .find()
     .then((gameArray) => {

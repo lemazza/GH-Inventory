@@ -32,23 +32,25 @@ const GameInventorySchema = mongoose.Schema({
 });
 
 
-GameInventorySchema.methods.serialize = () => ({
-  bggId: this.bggId,
-  name: this.name,
-  image: this.image,
-  description: this.description,
-  year: this.year,
-  minPlayers: this.minPlayers,
-  maxPlayers: this.maxPlayers,
-  playTime: this.playTime,
-  minAge: this.minAge,
-  designer: this.designer,
-  bggBayesAvg: this.bggBayesAvg,
-  lastModified: this.lastModified,
-  shelf: this.ghEdit.ghShelf,
-  locationName: this.ghEdit.ghLocationName,
-  dateAdded: this.dateAdded,
-});
+GameInventorySchema.methods.serialize = function serialize() {
+  return {
+    bggId: this.bggId,
+    name: this.name,
+    image: this.image,
+    description: this.description,
+    year: this.year,
+    minPlayers: this.minPlayers,
+    maxPlayers: this.maxPlayers,
+    playTime: this.playTime,
+    minAge: this.minAge,
+    designer: this.designer,
+    bggBayesAvg: this.bggBayesAvg,
+    lastModified: this.lastModified,
+    shelf: this.ghEdit.ghShelf,
+    locationName: this.ghEdit.ghLocationName,
+    dateAdded: this.dateAdded,
+  };
+};
 
 /*
  * Update Log
