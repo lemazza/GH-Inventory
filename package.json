@@ -16,6 +16,10 @@
   "bugs": {
     "url": "https://github.com/lemazza/GH-Inventory-API/issues"
   },
+  "engines": {
+    "node": "10.15.3",
+    "npm": "6.4.1"
+  },
   "homepage": "https://github.com/lemazza/GH-Inventory-API#readme",
   "dependencies": {
     "bcryptjs": "^2.4.3",
