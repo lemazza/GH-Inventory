@@ -1,5 +1,5 @@
 {
-  "name": "GameHaus Inventory Server",
+  "name": "gamehaus-inventory-server",
   "version": "1.0.0",
   "description": "A card catalog for GameHaus' inventory",
   "main": "server.js",
