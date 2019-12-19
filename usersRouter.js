@@ -43,9 +43,9 @@ router.get('/', (req, res) => {
 */
 
 
-router.get('/:username', jwtAuth, (req, res) => {
+router.get('/:id', jwtAuth, (req, res) => {
   User
-    .findOne({ username: req.params.username })
+    .findById(req.params.id)
     .then((user) => {
       res.json(user.serialize());
     })
@@ -55,7 +55,7 @@ router.get('/:username', jwtAuth, (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const requiredFields = ['email', 'username', 'password', 'initials', 'active', 'admin'];
+  const requiredFields = ['email', 'firstName', 'password', 'initials', 'active', 'admin'];
   const missingField = requiredFields.find((field) => !(field in req.body));
   if (missingField) {
     return res.status(422).json({
@@ -66,7 +66,7 @@ router.post('/', (req, res) => {
     });
   }
 
-  const stringFields = ['username', 'password', 'email', 'initials'];
+  const stringFields = ['firstName', 'lastName', 'password', 'email', 'initials'];
   const nonStringField = stringFields.find(
     (field) => field in req.body && typeof req.body[field] !== 'string',
   );
@@ -101,7 +101,7 @@ router.post('/', (req, res) => {
   // trimming them and expecting the user to understand.
   // We'll silently trim the other fields, because they aren't credentials used
   // to log in, so it's less of a problem.
-  const explicityTrimmedFields = ['username', 'password'];
+  const explicityTrimmedFields = ['firstName', 'lastName', 'password'];
   const nonTrimmedField = explicityTrimmedFields.find(
     (field) => req.body[field].trim() !== req.body[field],
   );
@@ -116,7 +116,7 @@ router.post('/', (req, res) => {
   }
 
   const sizedFields = {
-    username: {
+    firstName: {
       min: 1,
     },
     password: {
@@ -128,9 +128,6 @@ router.post('/', (req, res) => {
     initials: {
       min: 2,
       max: 3,
-    },
-    email: {
-      min: 3,
     },
   };
   const tooSmallField = Object.keys(sizedFields).find(
@@ -156,14 +153,14 @@ router.post('/', (req, res) => {
   }
 
   let {
-    username, email, password, initials, active, admin,
+    firstName, lastName, email, password, initials, active, admin,
   } = req.body;
   // Username and password come in pre-trimmed, otherwise we throw an error
   // before this
   initials = initials.trim();
 
 
-  return User.find({ username })
+  return User.find({ email })
     .count()
     .then((count) => {
       if (count > 0) {
@@ -171,15 +168,16 @@ router.post('/', (req, res) => {
         return Promise.reject(new Error({
           code: 422,
           reason: 'ValidationError',
-          message: 'username already taken',
-          location: 'username',
+          message: 'a user with this email already exists',
+          location: 'email',
         }));
       }
       // If there is no existing user, hash the password
       return User.hashPassword(password);
     })
     .then((hash) => User.create({
-      username,
+      firstName,
+      lastName,
       email,
       initials,
       active,
@@ -208,7 +206,7 @@ router.put('/:id', jwtAuth, async (req, res) => {
     });
   }
   const updated = {};
-  const updateableFields = ['email', 'username', 'password', 'initials', 'active', 'admin'];
+  const updateableFields = ['email', 'firstName', 'lastName', 'password', 'initials', 'active', 'admin'];
   updateableFields.forEach((field) => {
     if (field in req.body) {
       updated[field] = req.body[field];

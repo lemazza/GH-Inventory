@@ -12,7 +12,7 @@ const config = require('../config');
 const router = express.Router();
 
 const createAuthToken = (user) => jwt.sign({ user }, config.JWT_SECRET, {
-  subject: user.username,
+  subject: user.email,
   expiresIn: config.JWT_EXPIRY,
   algorithm: 'HS256',
 });
@@ -27,14 +27,14 @@ router.use(bodyParser.json());
 // The user provides a username and password to login
 
 router.post('/login', localAuth, (req, res) => {
-  console.log(req.body);
+  console.log('login req body', req.body);
   const authToken = createAuthToken(req.body);
 
   User
-    .findOne({ username: req.body.username })
+    .findOne({ email: req.body.email })
     .then((user) => {
-      console.log(user);
-      res.json({ authToken, userId: user.id });
+      const name = `${user.firstName} ${user.lastName[0]}.`;
+      res.json({ authToken, name });
     });
 });
 

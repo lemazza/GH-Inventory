@@ -67,9 +67,10 @@ const UpdateLogSchema = mongoose.Schema({
  */
 
 const UserSchema = mongoose.Schema({
-  email: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  username: { type: String, required: true, unique: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String },
   initials: {
     type: String, required: true, unique: true, minlength: 2, maxlength: 3,
   },
@@ -80,7 +81,9 @@ const UserSchema = mongoose.Schema({
 UserSchema.methods.serialize = function serialize() {
   return {
     id: this._id,
-    username: this.username,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    email: this.email,
     initials: this.initials,
     active: this.active,
     admin: this.admin,
