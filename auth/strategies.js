@@ -8,11 +8,9 @@ const { User } = require('../models');
 const { JWT_SECRET } = require('../config');
 
 const localStrategy = new LocalStrategy({usernameField: 'email'}, (email, password, callback) => {
-  console.log('made it here in local strat1');
   let user;
   User.findOne({ email })
     .then((_user) => {
-      console.log('made it here in localStrategy2')
       user = _user;
       if (!user) {
         // Return a rejected promise so we break out of the chain of .thens.

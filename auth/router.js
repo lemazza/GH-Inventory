@@ -27,23 +27,20 @@ router.use(bodyParser.json());
 // The user provides a username and password to login
 
 router.post('/login', localAuth, (req, res) => {
-  console.log('login req body', req.body);
-  const authToken = createAuthToken(req.body);
-
-  User
-    .findOne({ email: req.body.email })
-    .then((user) => {
-      const name = `${user.firstName} ${user.lastName[0]}.`;
-      res.json({ authToken, name });
-    });
+  const username = `${req.user.firstName} ${req.user.lastName[0]}.`;
+  const authToken = createAuthToken(req.user);
+  res.json({ authToken, username });
+  
 });
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
+
 // The user exchanges a valid JWT for a new one with a later expiration
 router.post('/refresh', jwtAuth, (req, res) => {
+  const username = `${req.user.firstName} ${req.user.lastName[0]}.`;
   const authToken = createAuthToken(req.user);
-  res.json({ authToken });
+  res.json({ authToken, username });
 });
 
 module.exports = { router, createAuthToken };
